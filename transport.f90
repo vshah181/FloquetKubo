@@ -9,7 +9,8 @@ contains
             photon_0_start, photon_0_end, klist) result(conductivity_tensor)
     use hamiltonian, only: slab_hamiltonian, slab_velocities_xy
     use parameters, only: num_r_pts, nf_bands, nkp, num_bands, nkp, nene,      &
-        nlayers
+        nlayers, energy_list
+    use constants, only: cmplx_0
     implicit none
     external ZHEEVD
         complex(dp), intent(in) :: static_r_ham_list(num_r_pts, num_bands, num_bands)
@@ -28,7 +29,7 @@ contains
         complex(dp), allocatable :: swork(:), stwork(:)
         integer,     allocatable :: siwork(:), stiwork(:)
 
-        integer                  :: ik, ts_bands, tf_bands
+        integer                  :: ik, ts_bands, tf_bands, iw
         complex(dp), allocatable :: static_eigenmat(:, :), floquet_eigenmat(:, :)
         complex(dp), allocatable :: velocity_operators(:, :, :)
         real(dp),    allocatable :: static_eigvals(:), floquet_eigvals(:)
@@ -36,7 +37,7 @@ contains
         logical                  :: floquet_workspace_allocated
         logical                  :: static_workspace_allocated
 
-        real(dp)                 :: conductivity_tensor(2, 2, n_ene)
+        complex(dp)              :: conductivity_tensor(2, 2, n_ene)
 !--------------------------Allocate arrays for ZHEEVD--------------------------
         if ((ibeg .lt. 1) .or. (iend .gt. nkp)) then
             error stop "Invalid ibeg/iend."
@@ -63,6 +64,8 @@ contains
         floquet_workspace_allocated = .false.
 
         allocate(velocity_operators(tf_bands, tf_bands, 2))
+
+        conductivity_tensor = cmplx_0
 
         do ik = ibeg, iend
             k = klist(:, ik)
@@ -128,8 +131,16 @@ contains
             ! Now we need the occupations
             occupations = floquet_fermionic_occ(static_eigvals,                &
                 static_eigenmat, floquet_eigenmat, tf_bands, ts_bands)
-        enddo
 
+            ! Finally, sum over probe energies and apply Kubo-Greenwood
+            do iw = 1, nene
+                conductivity_tensor(:, :, iw) = conductivity_tensor(:, :, iw)
+                                              + kubo_greenwood(occupations,    &
+                                                floquet_eigvals,               &
+                                                velocity_operators,            &
+                                                energies(iw), tf_bands)
+            enddo
+        enddo
     end function compute_conductivities
 !******************************************************************************
     pure function floquet_fermionic_occ(static_energies, static_states,        &
@@ -166,4 +177,43 @@ contains
             enddo
         enddo
     end function floquet_fermionic_occ
+!******************************************************************************
+    pure function kubo_greenwood(occupations, energies, velocities, probe,     &
+            n_bands) result(summand)
+    use parameters, only: broadening_factor
+    use constants, only: cmplx_0, cmplx_i
+    implicit none
+        integer,     intent(in) :: n_bands
+        real(dp),    intent(in) :: energies(n_bands), occupations(n_bands), probe
+        complex(dp), intent(in) :: velocities(n_bands, n_bands, 2)
+        
+        real(dp), parameter     :: tol = 1.0E-16_dp
+        integer                 :: a, b, x, y
+        real(dp)                :: ediff 
+        complex(dp)             :: numerator, denominator, ieta
+
+        complex(dp)             :: summand(2, 2)
+
+        ieta = cmplx_i * broadening_factor
+
+        ! compute sigma_{x y}
+        do x = 1, 2
+            do y = 1, 2
+                do a = 1, n_bands
+                    do b = 1, n_bands
+                        ediff = energies(b) - energies(a)
+                        numerator = (occupations(a) - occupations(b))          &
+                                  * velocities(a, b, x) * velocities(b, a, y)
+                        denominator = (probe + ieta - ediff) * ediff
+                        if (abs(denominator) .gt. tol) then
+                            summand(x, y) =  numerator / denominator
+                        else
+                            summand(x, y) = cmplx_0
+                        endif
+                    enddo
+                enddo
+            enddo
+        enddo
+    end function kubo_greenwood
+
 end module transport
