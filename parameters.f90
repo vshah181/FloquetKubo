@@ -7,7 +7,7 @@ public :: seedname, basis, nkp, num_bands, num_r_pts, avec, bvec, r_list, nk
 public :: initialise_parameters, electric_field_si, omega, soc, nlayers, nene
 public :: weights, energy_list, r_ham_list, num_photon, phase_shift, nf_bands
 public :: a_0, projection_centres, nk, broadening_factor, direction, k_shift
-public :: k_frac, rlist_cart
+public :: k_frac, rlist_cart, fermi_energy
     character(len=99), protected        :: seedname
     character(len=4),  protected        :: basis
     integer,           protected        :: num_bands, nf_bands, nkp, direction 
