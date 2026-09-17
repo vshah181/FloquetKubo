@@ -19,7 +19,7 @@ implicit none
     integer                  :: nkpar
     real(dp), allocatable    :: klist(:, :), kdists(:)
     complex(dp), allocatable :: floquet_r_ham_list(:, :, :)
-    complex(dp), allocatable :: conductivity_tensor(:, :)
+    complex(dp), allocatable :: conductivity_tensor(:, :, :)
 
     
 !-----------------------------Initialise MPI here------------------------------
