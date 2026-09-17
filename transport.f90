@@ -5,9 +5,8 @@ private
 public :: compute_conductivities
 contains
 !******************************************************************************
-    function compute_conductivities(floquet_r_ham_list, static_r_ham_list,&
-            photon_0_start, photon_0_end, klist, ibeg, iend)                   &
-        result(conductivity_tensor)
+    function compute_conductivities(floquet_r_ham_list, static_r_ham_list,     &
+            klist, ibeg, iend) result(conductivity_tensor)
     use hamiltonian, only: slab_hamiltonian, slab_velocities_xy
     use parameters, only: num_r_pts, nf_bands, nkp, num_bands, nkp, nene,      &
         nlayers, energy_list

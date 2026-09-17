@@ -2,89 +2,71 @@ module write_files
 use kinds, only: dp
 implicit none
 private
-public :: write_energies, write_spin, write_oam, write_weights, write_kdists
-public :: write_surface_projections
+public :: write_conductivity_real, write_conductivity_imag
 contains
-    subroutine write_spin(spins)
-    use parameters, only: nf_bands, nkp, seedname
+    subroutine write_conductivity_real(conductivity_tesnor)
+    use parameters, only: nene, energy_list
     implicit none
-        real(dp), intent(in) :: spins(nkp, nf_bands, 3)
-        character(len=99) :: filename
-
-        write(filename, fmt="(2A)") trim(adjustl(seedname)), "_spin.bin"
-        open(210, file=trim(adjustl(filename)), form="unformatted",            &
-            access="stream", status="replace")
-        write(210) spins
-        close(210)
-    end subroutine write_spin
-!******************************************************************************
-    subroutine write_oam(angular_momenta)
-    use parameters, only: nf_bands, nkp, seedname
-    implicit none
-        real(dp), intent(in) :: angular_momenta(nkp, nf_bands, 3)
-        character(len=99) :: filename
-
-        write(filename, fmt="(2A)") trim(adjustl(seedname)), "_oam.bin"
-        open(211, file=trim(adjustl(filename)), form="unformatted",            &
-            access="stream", status="replace")
-        write(211) angular_momenta
-        close(211)
-    end subroutine write_oam
-!******************************************************************************
-    subroutine write_energies(energies)
-    use parameters, only: nkp, nf_bands, seedname
-    implicit none
-        real(dp), intent(in) :: energies(nkp, nf_bands)
-        character(len=99) :: filename
-
-        write(filename, fmt="(2A)") trim(adjustl(seedname)), "_eigval.bin"
-        open(212, file=trim(adjustl(filename)), form="unformatted",            &
-            access="stream", status="replace")
-        write(212) energies
-        close(212)
-    end subroutine write_energies
-!******************************************************************************
-    subroutine write_weights(spectral_weights)
-    use parameters, only: nkp, nf_bands, seedname
-    implicit none
-        real(dp), intent(in) :: spectral_weights(nkp, nf_bands)
-        character(len=99) :: filename
-
-        write(filename, fmt="(2A)") trim(adjustl(seedname)), "_weights.bin"
-        open(212, file=trim(adjustl(filename)), form="unformatted",            &
-            access="stream", status="replace")
-        write(212) spectral_weights
-        close(212)
-    end subroutine write_weights
-!******************************************************************************
-    subroutine write_kdists(kdists)
-    use parameters, only: nkp, seedname
-    implicit none
-        real(dp), intent(in) :: kdists(nkp)
-        character(len=99) :: filename
-
-        write(filename, fmt="(2A)") trim(adjustl(seedname)), "_kdists.bin"
-        open(212, file=trim(adjustl(filename)), form="unformatted",            &
-            access="stream", status="replace")
-        write(212) kdists
-        close(212)
-    end subroutine write_kdists
-!******************************************************************************
-    subroutine write_surface_projections(greens_function)
-    use parameters, only: nlayers, nene, nkp, seedname
-    use constants, only: pi
-    implicit none
-        complex(dp), intent(in) :: greens_function(nlayers, nene, nkp)
-        real(dp),   allocatable :: spectral_function(:, :, :)
+        complex(dp), intent(in) :: conductivity_tensor(2, 2, nene)
         character(len=99)       :: filename
+        integer                 :: iu, ie
+        logical                 :: file_exists
 
-        allocate(spectral_function(nlayers, nene, nkp))
-        spectral_function = (-1.0_dp / pi) * aimag(greens_function)
+        write(filename, fmt="(2A)") trim(adjustl(seedname)),                   &
+            "_real_conductivity.csv"
 
-        write(filename, fmt="(2A)") trim(adjustl(seedname)), "_layer_proj.bin"
-        open(212, file=trim(adjustl(filename)), form="unformatted",            &             
-            access="stream", status="replace")
-        write(212) spectral_function
-        close(212)
-    end subroutine write_surface_projections
+        inquire(file=trim(adjustl(filename)), exist=file_exists)
+        if (file_exists) then
+            open(newunit=iu, file=trim(adjustl(filename)), status="replace",   &
+                action="write")
+        else
+            open(newunit=iu, file=trim(adjustl(filename)), status="new",       &
+                action="write")
+        endif
+
+        write(iu, fmt="(2A)") "# probe energy,      sigma_xx,      sigma_xy,", &
+            "      sigma_yx,      sigma_yy"
+        do ie = 1, nene
+            write(iu, fmt="ES14.6,4(A,ES14.6)") energy_list(ie),               &
+                ",", real(conductivity_tesnor(1, 1, ie), kind=dp),             &
+                ",", real(conductivity_tesnor(1, 2, ie), kind=dp),             &
+                ",", real(conductivity_tesnor(2, 1, ie), kind=dp),             &
+                ",", real(conductivity_tesnor(2, 2, ie), kind=dp)
+        enddo
+
+        close(iu)
+    end subroutine write_conductivity_real
+!******************************************************************************
+    subroutine write_conductivity_imag(conductivity_tesnor)
+    use parameters, only: nene, energy_list
+    implicit none
+        complex(dp), intent(in) :: conductivity_tensor(2, 2, nene)
+        character(len=99)       :: filename
+        integer                 :: iu, ie
+        logical                 :: file_exists
+
+        write(filename, fmt="(2A)") trim(adjustl(seedname)),                   &
+            "_imag_conductivity.csv"
+
+        inquire(file=trim(adjustl(filename)), exist=file_exists)
+        if (file_exists) then
+            open(newunit=iu, file=trim(adjustl(filename)), status="replace",   &
+                action="write")
+        else
+            open(newunit=iu, file=trim(adjustl(filename)), status="new",       &
+                action="write")
+        endif
+
+        write(iu, fmt="(2A)") "# probe energy,      sigma_xx,      sigma_xy,", &
+            "      sigma_yx,      sigma_yy"
+        do ie = 1, nene
+            write(iu, fmt="ES14.6,4(A,ES14.6)") energy_list(ie),               &
+                ",", aimag(conductivity_tesnor(1, 1, ie), kind=dp),            &
+                ",", aimag(conductivity_tesnor(1, 2, ie), kind=dp),            &
+                ",", aimag(conductivity_tesnor(2, 1, ie), kind=dp),            &
+                ",", aimag(conductivity_tesnor(2, 2, ie), kind=dp)
+        enddo
+
+        close(iu)
+    end subroutine write_conductivity_imag
 end module write_files
