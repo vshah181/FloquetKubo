@@ -1,9 +1,8 @@
-program FloquetSurfaceWeighted
+program FloquetKubo
 use kinds, only: dp
 use mpi_f08
 use mpi_utilities, only: split_klist
 use BZ_utilities, only: make_kmesh
-use hamiltonian, only: ft_hr
 use parameters, only: nkp, nf_bands, initialise_parameters, num_r_pts,         &
     r_ham_list, floquet_switch, electric_field_si, nlayers, nene
 use floquet, only: make_floquet_hamiltonian_real_space
@@ -74,4 +73,4 @@ implicit none
         call write_conductivity_imag(conductivity_tensor_glob)
     endif
     call MPI_FINALIZE(ierr)
-end program FloquetSurfaceWeighted
+end program FloquetKubo

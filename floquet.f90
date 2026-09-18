@@ -4,7 +4,7 @@ implicit none
 private
 public :: make_floquet_hamiltonian
 contains
-    subroutine make_floquet_hamiltonian_real_space(new_hr_list)
+    pure subroutine make_floquet_hamiltonian_real_space(new_hr_list)
     use parameters, only: num_photon, nf_bands, omega, num_bands, num_r_pts,   &
             r_list, r_ham_list
     use constants, only: hbar=>reduced_planck_constant_ev, cmplx_0
@@ -70,7 +70,7 @@ contains
         enddo
     end subroutine make_floquet_hamiltonian_real_space
 
-    function fourier_coefficient(nbands, r_ham, m, t0, r) result(ham_m)
+    pure function fourier_coefficient(nbands, r_ham, m, t0, r) result(ham_m)
         use constants, only: two_pi, cmplx_i
         use parameters, only: omega
         implicit none
@@ -82,8 +82,9 @@ contains
 
             integer                  :: i
             real (dp)                :: period, t_end, t_i, t_step
+            complex(dp)              :: imw
 
-            complex (dp)             :: ham_m(nbands, nbands), imw
+            complex (dp)             :: ham_m(nbands, nbands)
 
             period = two_pi / omega
             t_end = t0 + period
@@ -100,7 +101,7 @@ contains
             ham_m = ham_m / real(n, kind=dp)
     end function fourier_coefficient
 
-    function t_ham(r, time, r_ham) result(ham_t)
+    pure function t_ham(r, time, r_ham) result(ham_t)
     use parameters, only: projection_centres, num_bands, a_0, omega,           &
         phase_shift, avec
     use constants, only: cmplx_i
