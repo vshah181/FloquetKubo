@@ -11,8 +11,8 @@ contains
     use parameters, only: num_r_pts, nf_bands, nkp, num_bands, nkp, nene,      &
         nlayers, energy_list
     use constants, only: cmplx_0
+    use lapack_interfaces, only: ZHEEVD
     implicit none
-    external ZHEEVD
         complex(dp), intent(in) :: static_r_ham_list(num_r_pts, num_bands, num_bands)
         complex(dp), intent(in) :: floquet_r_ham_list(num_r_pts, nf_bands, nf_bands)
         real(dp),    intent(in) :: kmesh(3, nkp)
