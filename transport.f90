@@ -12,6 +12,7 @@ contains
         nlayers, energy_list
     use constants, only: cmplx_0
     use lapack_interfaces, only: ZHEEVD
+    use gauge_transformation, only: transform_velocity
     implicit none
         complex(dp), intent(in) :: static_r_ham_list(num_r_pts, num_bands, num_bands)
         complex(dp), intent(in) :: floquet_r_ham_list(num_r_pts, nf_bands, nf_bands)
@@ -127,13 +128,16 @@ contains
                 error stop "ZHEEVD failed!"
             endif
 
-            ! Now we need velocity matrices
-            call slab_velocities_xy(k, floquet_r_ham_list, nf_bands,           &
-                velocity_operators)
-
             ! Now we need the occupations
             occupations = floquet_fermionic_occ(static_eigvals,                &
                 static_eigenmat, floquet_eigenmat, tf_bands, ts_bands)
+
+            ! Now we need velocity matrices
+            call slab_velocities_xy(k, floquet_r_ham_list, nf_bands,           &
+                velocity_operators)
+            ! Now transform the velocities to the right gauge
+            call transform_velocity(tf_bands, floquet_eigenmat,                &
+                velocity_operators)
 
             ! Finally, sum over probe energies and apply Kubo-Greenwood
             do iw = 1, nene

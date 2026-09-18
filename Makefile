@@ -15,6 +15,8 @@ MOD_TRAN := transport.o
 MOD_LINT := lapack_interfaces.o
 MOD_FLOQ := floquet.o
 MOD_STAT := statistical_distributions.o
+MOD_MTRX := matrix_utilities.o
+MOD_GAGE := gauge_transformation.o
 
 #-----------------THE FOLLOWING MODULES HAVE NO DEPENDENCIES-------------------
 SOL_MODS := $(MOD_KIND) $(MOD_LINT)
@@ -22,7 +24,8 @@ SOL_MODS := $(MOD_KIND) $(MOD_LINT)
 ALL_MODS := $(SOL_MODS) $(MOD_BZUT) $(MOD_ARRY)\
 	    $(MOD_PARM) $(MOD_READ) $(MOD_WRTE)\
 	    $(MOD_CNST) $(MOD_HMLT) $(MOD_TRAN)\
-		$(MOD_FLOQ) $(MOD_MPIU) $(MOD_STAT)
+		$(MOD_FLOQ) $(MOD_MPIU) $(MOD_STAT)\
+		$(MOD_GAGE) $(MOD_MTRX)
 
 
 #-------------------------------------MAIN-------------------------------------
@@ -66,13 +69,19 @@ $(MOD_CNST):  %.o: %.f90 $(MOD_KIND)
 $(MOD_HMLT):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_CNST)
 	$(FF) -c $(FFLAGS) $(FLIB) $<
 
-$(MOD_TRAN):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_HMLT) $(MOD_ARRY) $(MOD_CNST) $(MOD_LINT) $(MOD_STAT)
+$(MOD_TRAN):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_HMLT) $(MOD_ARRY) $(MOD_CNST) $(MOD_LINT) $(MOD_STAT) $(MOD_GAGE)
 	$(FF) -c $(FFLAGS) $(FLIB) $<
 
 $(MOD_STAT):  %.o: %.f90 $(MOD_KIND) $(MOD_CNST)
 	$(FF) -c $(FFLAGS) $(FLIB) $<
 
 $(MOD_FLOQ):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_CNST)
+	$(FF) -c $(FFLAGS) $(FLIB) $<
+
+$(MOD_GAGE):  %.o: %.f90 $(MOD_MTRX) $(MOD_KIND)
+	$(FF) -c $(FFLAGS) $(FLIB) $<
+
+$(MOD_MTRX):  %.o: %.f90 $(MOD_KIND)
 	$(FF) -c $(FFLAGS) $(FLIB) $<
 
 #------------------------------------------------------------------------------
