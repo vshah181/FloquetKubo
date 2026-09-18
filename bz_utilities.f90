@@ -25,7 +25,7 @@ contains
         k2_end = k_shift(2) + (k_frac(2) / 2.0_dp)
         k3_end = k_shift(3) + (k_frac(3) / 2.0_dp)
     
-        k1_list = linspace(k1_beg, k2_end, nk(1), .false.)
+        k1_list = linspace(k1_beg, k1_end, nk(1), .false.)
         k2_list = linspace(k2_beg, k2_end, nk(2), .false.)
         k3_list = linspace(k3_beg, k3_end, nk(3), .false.)
 

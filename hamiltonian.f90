@@ -106,8 +106,8 @@ contains
                         vx_block = vx_block + (rx * prefac_matrix)
                         vy_block = vy_block + (ry * prefac_matrix)
 
-                        irow=irow+n_bands
-                        icol=icol+n_bands
+                        irow = irow + n_bands
+                        icol = icol + n_bands
 
                     end associate
                 enddo
