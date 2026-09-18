@@ -4,10 +4,10 @@ use array_utilities, only: arange
 implicit none
 private
 public :: seedname, basis, nkp, num_bands, num_r_pts, avec, bvec, r_list, nk
-public :: initialise_parameters, electric_field_si, omega, soc, nlayers, nene
+public :: initialise_parameters, electric_field_si, omega, soc, nlayers, k_frac
 public :: weights, energy_list, r_ham_list, num_photon, phase_shift, nf_bands
-public :: a_0, projection_centres, nk, broadening_factor, direction, k_shift
-public :: k_frac, rlist_cart, fermi_energy
+public :: a_0, projection_centres, broadening_factor, direction, k_shift, nene
+public :: rlist_cart, fermi_energy
     character(len=99), protected        :: seedname
     character(len=4),  protected        :: basis
     integer,           protected        :: num_bands, nf_bands, nkp, direction 
@@ -47,12 +47,8 @@ contains
         omega = 0.0_dp
         phase_shift = 0.0_dp
         a_0 = 0.0_dp
-        if (floquet_switch) then
-            call read_vector_potential(num_photon, omega, phase_shift, a_0)
-            nf_bands = (1 + (2 * num_photon)) * num_bands
-        else
-            nf_bands = num_bands
-        endif
+        call read_vector_potential(num_photon, omega, phase_shift, a_0)
+        nf_bands = (1 + (2 * num_photon)) * num_bands
 
         electric_field_si = hbar * omega * a_0 * 1.0E10_dp
         energy_list = arange(energy_range(1), energy_range(2), energy_step)

@@ -1,5 +1,5 @@
 include make.inc
-PROGRAM := floquet_surface_with_weight
+PROGRAM := floquet_kubo
 
 #-----------------------------------MODULES------------------------------------
 MOD_BZUT := bz_utilities.o
@@ -11,16 +11,18 @@ MOD_WRTE := write_files.o
 MOD_CNST := constants.o
 MOD_KIND := kinds.o
 MOD_HMLT := hamiltonian.o
-MOD_ELEC := electronic_structure.o
+MOD_TRAN := transport.o
+MOD_LINT := lapack_interfaces.o
 MOD_FLOQ := floquet.o
+MOD_STAT := statistical_distributions.o
 
 #-----------------THE FOLLOWING MODULES HAVE NO DEPENDENCIES-------------------
-SOL_MODS := $(MOD_KIND)
+SOL_MODS := $(MOD_KIND) $(MOD_LINT)
 #-------------------THE ABOVE MODULES HAVE NO DEPENDENCIES---------------------
 ALL_MODS := $(SOL_MODS) $(MOD_BZUT) $(MOD_ARRY)\
 	    $(MOD_PARM) $(MOD_READ) $(MOD_WRTE)\
-	    $(MOD_CNST) $(MOD_HMLT) $(MOD_ELEC)\
-		$(MOD_FLOQ) $(MOD_MPIU)
+	    $(MOD_CNST) $(MOD_HMLT) $(MOD_TRAN)\
+		$(MOD_FLOQ) $(MOD_MPIU) $(MOD_STAT)
 
 
 #-------------------------------------MAIN-------------------------------------
@@ -33,7 +35,7 @@ $(PROGRAM): $(ALL_MODS) $(OBJ_MAIN)
 	$(FF) $(FFLAGS) $^ $(FLIB) -o $@
 
 #---------------------------PREPARE THE MAIN OBJECT----------------------------
-$(OBJ_MAIN): %.o: %.f90 $(ALL_MODS) $(ALL_SBRS)
+$(OBJ_MAIN): %.o: %.f90 $(ALL_MODS)
 	$(FF) -c $(FFLAGS) $(FLIB) $<
 
 #------------------------------PREPARE THE MODULES-----------------------------
@@ -64,7 +66,10 @@ $(MOD_CNST):  %.o: %.f90 $(MOD_KIND)
 $(MOD_HMLT):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_CNST)
 	$(FF) -c $(FFLAGS) $(FLIB) $<
 
-$(MOD_ELEC):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_HMLT) $(MOD_ARRY)
+$(MOD_TRAN):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_HMLT) $(MOD_ARRY) $(MOD_CNST) $(MOD_LINT) $(MOD_STAT)
+	$(FF) -c $(FFLAGS) $(FLIB) $<
+
+$(MOD_STAT):  %o: %.f90 $(MOD_KIND) $(MOD_CNST)
 	$(FF) -c $(FFLAGS) $(FLIB) $<
 
 $(MOD_FLOQ):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_CNST)

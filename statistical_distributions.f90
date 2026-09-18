@@ -15,7 +15,7 @@ contains
         if (present(temperature) .and. (temperature .gt. 0.0_dp)) then
             fd = (1.0_dp - tanh(energy / (kB * temperature * 2.0_dp))) / 2.0_dp
         else
-            fd = 0.5_dp - sign(0.5_dp, energy)
+            fd = 0.5_dp - sign(0.5_dp, energy)  ! branchless step-function
         endif
     end function fermi_dirac
 end module statistical_distributions

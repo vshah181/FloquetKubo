@@ -2,7 +2,7 @@ module array_utilities
 use kinds, only: dp
 implicit none
 private
-public :: arange, linspace, inner_product, cross_product
+public :: arange, linspace, cross_product
 contains
 !******************************************************************************
     pure function arange(first, last, step) result(answer)
@@ -61,22 +61,6 @@ contains
             answer(i + 1) = first + (i * step_size)
         enddo
     end function linspace
-!******************************************************************************
-    pure function inner_product(vec_1, vec_2) result(ip)
-        use constants, only: cmplx_0
-        implicit none
-        ! Order of the input matters. This is <v1|v2>
-        complex(dp), intent(in) :: vec_1(:), vec_2(:)
-        complex(dp)             :: ip
-        integer                 :: i
-        if (size(vec_1) .ne. size(vec_2)) then
-            error stop "FATAL ERROR: size mismatch between vectors!"
-        endif
-        ip=cmplx_0
-        do i=1, size(vec_1)
-            ip = ip + (conjg(vec_1(i)) * vec_2(i))
-        enddo
-    end function inner_product
 !******************************************************************************
     function cross_product(vec_1, vec_2) result(vec_cross)
         implicit none

@@ -19,7 +19,6 @@ contains
         character(len=99) :: label, ival, line, temp_line
         integer :: i, eof, inp_unit
 
-        floquet_switch = .false.
         open(newunit=inp_unit, file='INPUT', status='old', action='read', &
             iostat=eof)
         do while(eof .ne. iostat_end)
