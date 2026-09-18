@@ -203,7 +203,20 @@ contains
         do x = 1, 2
             do y = 1, 2
                 do a = 1, n_bands
-                    do b = 1, n_bands
+                    do b = 1, a - 1
+                        ediff = energies(b) - energies(a)
+                        numerator = (occupations(a) - occupations(b))          &
+                                  * velocities(a, b, x) * velocities(b, a, y)
+                        denominator = (probe + ieta - ediff) * ediff
+                        if (abs(ediff) .gt. tol) then
+                            summand(x, y) = summand(x, y)                      &
+                                          + (numerator / denominator)
+                        else
+                            summand(x, y) = summand(x, y) + cmplx_0
+                        endif
+                    enddo
+                    ! skip a = b case without branching
+                    do b = a + 1, n_bands
                         ediff = energies(b) - energies(a)
                         numerator = (occupations(a) - occupations(b))          &
                                   * velocities(a, b, x) * velocities(b, a, y)
