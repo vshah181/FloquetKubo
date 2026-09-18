@@ -33,16 +33,20 @@ contains
     pure function linspace(first, last, num_steps, include_endpoint) result(answer)
         implicit none
         ! This is similar to numpy.linspace. Includes the endpoint by default.
+        ! if num_steps = 1, return the start value only.
         real(dp), intent(in)          :: first, last
         integer, intent(in)           :: num_steps
         logical, intent(in), optional :: include_endpoint
 
         ! Local variables
-        logical  :: use_endpoint
-        real(dp) :: step_size
-        integer  :: i
+        logical           :: use_endpoint
+        character(len=56) :: errmsg
+        real(dp)          :: step_size
+        integer           :: i
 
         real(dp), allocatable         :: answer(:)
+
+        errmsg = "FATAL ERROR: Cannot call linspace with less than 1 step!"
 
         if (present(include_endpoint)) then
             use_endpoint = include_endpoint
@@ -51,15 +55,21 @@ contains
         endif
 
         allocate(answer(num_steps))
-        if (use_endpoint) then
-            step_size = (last - first) / real(num_steps - 1, kind=dp)
-        else
-            step_size = (last - first) / real(num_steps, kind=dp)
-        endif
+        if (num_steps .gt. 1) then
+            if (use_endpoint) then
+                step_size = (last - first) / real(num_steps - 1, kind=dp)
+            else
+                step_size = (last - first) / real(num_steps, kind=dp)
+            endif
 
-        do i = 0, num_steps - 1
-            answer(i + 1) = first + (i * step_size)
-        enddo
+            do i = 0, num_steps - 1
+                answer(i + 1) = first + (i * step_size)
+            enddo
+        else if (num_steps .eq. 1) then
+            answer(num_steps) = first
+        else
+            error stop errmsg
+        endif
     end function linspace
 !******************************************************************************
     function cross_product(vec_1, vec_2) result(vec_cross)
