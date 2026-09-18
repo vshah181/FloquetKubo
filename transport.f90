@@ -15,8 +15,8 @@ contains
     implicit none
         complex(dp), intent(in) :: static_r_ham_list(num_r_pts, num_bands, num_bands)
         complex(dp), intent(in) :: floquet_r_ham_list(num_r_pts, nf_bands, nf_bands)
-        real(dp),    intent(in) :: kmesh(3, nkp)
-        integer,     intent(in) :: photon_0_start, photon_0_end, ibeg, iend
+        real(dp),    intent(in) :: klist(3, nkp)
+        integer,     intent(in) :: ibeg, iend
 
 !--------------------------ZHEEVD Variables (floquet)--------------------------
         integer                  :: flwork, flrwork, fliwork, fstat
@@ -137,7 +137,7 @@ contains
 
             ! Finally, sum over probe energies and apply Kubo-Greenwood
             do iw = 1, nene
-                conductivity_tensor(:, :, iw) = conductivity_tensor(:, :, iw)
+                conductivity_tensor(:, :, iw) = conductivity_tensor(:, :, iw)  &
                                               + kubo_greenwood(occupations,    &
                                                 floquet_eigvals,               &
                                                 velocity_operators,            &

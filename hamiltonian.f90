@@ -2,13 +2,13 @@ module hamiltonian
 use kinds, only: dp
 implicit none
 private
-public :: ft_hr
-public :: slab_hamiltonian
+public :: ft_hr, slab_hamiltonian, slab_velocities_xy
 contains
     pure function ft_hr(k, r_ham_list, n_bands) result(hk)
     use parameters, only: num_r_pts, r_list, weights
     use constants, only: cmplx_0, cmplx_i, two_pi
     implicit none
+        integer,     intent(in) :: n_bands
         real(dp),    intent(in) :: k(3)
         complex(dp), intent(in) :: r_ham_list(num_r_pts, n_bands, n_bands)
 
@@ -31,8 +31,9 @@ contains
     use parameters, only: num_r_pts, r_list, weights, nlayers, id=>direction
     use constants, only: cmplx_0, cmplx_i, two_pi
     implicit none
-        real(dp),    intent(in)  :: k(3)
-        complex(dp), intent(in)  :: r_ham_list(num_r_pts, n_bands, n_bands)
+        integer,      intent(in) :: n_bands
+        real(dp),     intent(in) :: k(3)
+        complex(dp),  intent(in) :: r_ham_list(num_r_pts, n_bands, n_bands)
 
         real(dp)                 :: phase, k_scaled(3)
         integer                  :: ir, il, irow, icol
@@ -71,6 +72,7 @@ contains
     use constants, only: cmplx_0, cmplx_i, two_pi
     ! assume slab in z / a_3 parallel to cartesian z
     implicit none
+        integer,      intent(in) :: n_bands
         real(dp),     intent(in) :: k(3)
         complex(dp),  intent(in) :: r_ham_list(num_r_pts, n_bands, n_bands)
 

@@ -69,7 +69,7 @@ $(MOD_HMLT):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_CNST)
 $(MOD_TRAN):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_HMLT) $(MOD_ARRY) $(MOD_CNST) $(MOD_LINT) $(MOD_STAT)
 	$(FF) -c $(FFLAGS) $(FLIB) $<
 
-$(MOD_STAT):  %o: %.f90 $(MOD_KIND) $(MOD_CNST)
+$(MOD_STAT):  %.o: %.f90 $(MOD_KIND) $(MOD_CNST)
 	$(FF) -c $(FFLAGS) $(FLIB) $<
 
 $(MOD_FLOQ):  %.o: %.f90 $(MOD_PARM) $(MOD_KIND) $(MOD_CNST)

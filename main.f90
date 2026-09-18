@@ -4,19 +4,18 @@ use mpi_f08
 use mpi_utilities, only: split_klist
 use BZ_utilities, only: make_kmesh
 use parameters, only: nkp, nf_bands, initialise_parameters, num_r_pts,         &
-    r_ham_list, floquet_switch, electric_field_si, nlayers, nene
+    r_ham_list, electric_field_si, nene
 use floquet, only: make_floquet_hamiltonian_real_space
 use write_files, only: write_conductivity_real, write_conductivity_imag
 use transport, only: compute_conductivities
 implicit none
 !--------------------------------MPI Variables---------------------------------
-    integer                  :: ierr, nprocs, pid, ibeg, iend, sendcounts
-    integer, allocatable     :: recvcounts(:), displs(:)
+    integer                  :: ierr, nprocs, pid, ibeg, iend
 !-------------------------------Global Variables-------------------------------
     complex(dp), allocatable :: conductivity_tensor_glob(:, :, :)
 !------------------------------------------------------------------------------
     integer                  :: nkpar
-    real(dp), allocatable    :: klist(:, :), kdists(:)
+    real(dp), allocatable    :: klist(:, :)
     complex(dp), allocatable :: floquet_r_ham_list(:, :, :)
     complex(dp), allocatable :: conductivity_tensor(:, :, :)
 
@@ -60,7 +59,7 @@ implicit none
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)
 
     if (nprocs /= 1) then
-        call MPI_Reduce(conductivity_tensor, conductivity_tensor_glob, 
+        call MPI_Reduce(conductivity_tensor, conductivity_tensor_glob,         &
             2 * 2 * nene, MPI_DOUBLE_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, ierr)
     else
         conductivity_tensor_glob = conductivity_tensor

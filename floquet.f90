@@ -2,7 +2,7 @@ module floquet
 use kinds, only: dp
 implicit none
 private
-public :: make_floquet_hamiltonian
+public :: make_floquet_hamiltonian_real_space
 contains
     pure subroutine make_floquet_hamiltonian_real_space(new_hr_list)
     use parameters, only: num_photon, nf_bands, omega, num_bands, num_r_pts,   &
