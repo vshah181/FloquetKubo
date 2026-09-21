@@ -68,7 +68,8 @@ contains
     end subroutine slab_hamiltonian
 !******************************************************************************
     pure subroutine slab_velocities_xy(k, r_ham_list, n_bands, vxy_slab) ! V_xy
-    use parameters, only: num_r_pts, r_list, weights, nlayers, rlist_cart 
+    use parameters, only: num_r_pts, r_list, weights, nlayers, rlist_cart,     &
+        intersite_diffs
     use constants, only: cmplx_0, cmplx_i, two_pi
     ! assume slab in z / a_3 parallel to cartesian z
     implicit none
@@ -103,8 +104,12 @@ contains
                             vy_block=>vxy_slab(irow:irow + n_bands - 1,        &
                             icol:icol + n_bands - 1, 2))
 
-                        vx_block = vx_block + (rx * prefac_matrix)
-                        vy_block = vy_block + (ry * prefac_matrix)
+                        ! Remember, we cannot simply differentiate the 
+                        ! Hamiltonain wrt k! We must add inter-site phases!
+                        vx_block = vx_block + (rx * prefac_matrix)             &
+                                 + (intersite_diffs(:, :, 1) * prefac_matrix)
+                        vy_block = vy_block + (ry * prefac_matrix)             &
+                                 + (intersite_diffs(:, :, 2) * prefac_matrix)
 
                         irow = irow + n_bands
                         icol = icol + n_bands

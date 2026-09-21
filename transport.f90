@@ -152,7 +152,8 @@ contains
 !******************************************************************************
     pure function floquet_fermionic_occ(static_energies, static_states,        &
         floquet_states, n_bands_floq, n_bands_stat) result(occupancy)
-    use parameters, only: e_fermi=>fermi_energy, num_photon
+    use parameters, only: e_fermi=>fermi_energy, num_photon, nlayers,          &
+        num_bands, nf_bands
     use statistical_distributions, only: fermi_dirac
     implicit none
         integer,     intent(in) :: n_bands_floq, n_bands_stat
@@ -160,26 +161,30 @@ contains
         complex(dp), intent(in) :: floquet_states(n_bands_floq, n_bands_floq)
         real(dp),    intent(in) :: static_energies(n_bands_stat)
 
-        integer                 :: mu, nu, photon_0_start, photon_0_end
-        real(dp)                :: projection
-        complex(dp)             :: inner_prod
+        integer                 :: mu, nu, il, iorb, stat_idx, floq_idx
+        complex(dp)             :: phi_nu_0(n_bands_stat), inner_prod
 
         real(dp)                :: occupancy(n_bands_floq)
 
-        photon_0_start = 1 + (num_photon * n_bands_stat)
-        photon_0_end = (1 + num_photon) * n_bands_stat
-
         do nu = 1, n_bands_floq
             occupancy(nu) = 0.0_dp
-            do mu = 1, n_bands_stat
-                associate(f_nu=>occupancy(nu), g_mu=>static_states(:, mu),     &
-                    ene_mu=>(static_energies(mu)-e_fermi),                     &
-                    phi_nu_0=>floquet_states(photon_0_start:photon_0_end, nu))
 
-                    inner_prod = dot_product(g_mu, phi_nu_0)
-                    projection = real(conjg(inner_prod) * inner_prod, kind=dp)
-                    f_nu = f_nu + (fermi_dirac(ene_mu) * projection)
-                end associate
+            ! Gather the m=0 components of the Floquet state nu
+            do il = 1, nlayers
+                do iorb = 1, num_bands
+                    stat_idx = (il - 1) * num_bands + iorb
+                    floq_idx = (il - 1) * nf_bands + num_photon * num_bands    &
+                             + iorb
+                    phi_nu_0(stat_idx) = floquet_states(floq_idx, nu)
+                enddo
+            enddo
+
+            ! Now project onto each static state mu
+            do mu = 1, n_bands_stat
+                inner_prod = dot_product(static_states(:, mu), phi_nu_0)       
+                occupancy(nu) = occupancy(nu)                                  &
+                              + fermi_dirac(static_energies(mu) - e_fermi)     &
+                              * real(inner_prod * conjg(inner_prod), kind=dp)
             enddo
         enddo
     end function floquet_fermionic_occ
@@ -190,7 +195,8 @@ contains
     use constants, only: cmplx_0, cmplx_i
     implicit none
         integer,     intent(in) :: n_bands
-        real(dp),    intent(in) :: energies(n_bands), occupations(n_bands), probe
+        real(dp),    intent(in) :: energies(n_bands), occupations(n_bands),    &
+            probe
         complex(dp), intent(in) :: velocities(n_bands, n_bands, 2)
         
         real(dp), parameter     :: tol = 1.0E-16_dp

@@ -7,7 +7,7 @@ public :: seedname, basis, nkp, num_bands, num_r_pts, avec, bvec, r_list, nk
 public :: initialise_parameters, electric_field_si, omega, soc, nlayers, k_frac
 public :: weights, energy_list, r_ham_list, num_photon, phase_shift, nf_bands
 public :: a_0, projection_centres, broadening_factor, direction, k_shift, nene
-public :: rlist_cart, fermi_energy
+public :: rlist_cart, fermi_energy, intersite_diffs
     character(len=99), protected        :: seedname
     character(len=4),  protected        :: basis
     integer,           protected        :: num_bands, nf_bands, nkp, direction 
@@ -23,6 +23,8 @@ public :: rlist_cart, fermi_energy
     integer,     protected, allocatable :: r_list(:, :), weights(:)
     real(dp),    protected, allocatable :: energy_list(:), rlist_cart(:, :)
     real(dp),    protected, allocatable :: projection_centres(:, :)
+    real(dp),    protected, allocatable :: intersite_positions(:, :)
+    real(dp),    protected, allocatable :: intersite_diffs(:, :, :)
     complex(dp), protected, allocatable :: r_ham_list(:, :, :)
 contains
     subroutine initialise_parameters
@@ -30,6 +32,7 @@ contains
         read_vector_potential
     use constants, only: hbar=>reduced_planck_constant_ev
     implicit none
+        integer :: i, j, orb_i, orb_j
 
         call read_input(seedname, basis, soc, nlayers, energy_range,           &
             energy_step, broadening_factor, direction, fermi_energy)
@@ -53,6 +56,32 @@ contains
         electric_field_si = hbar * omega * a_0 * 1.0E10_dp
         energy_list = arange(energy_range(1), energy_range(2), energy_step)
         nene = size(energy_list)
+
+        allocate(intersite_positions(num_bands, 3))
+        allocate(intersite_diffs(nf_bands, nf_bands, 2))
+
+        ! Compute Cartesian projection centres for each orbital.
+        intersite_positions = 0.0_dp
+        do i = 1, num_bands
+            do j = 1, 3
+                intersite_positions(i, :) = intersite_positions(i, :)          &
+                                          + (projection_centres(i, j)          &
+                                          * avec(j, :))
+            enddo
+        enddo
+
+        ! Build intersite difference matrices for the full Floquet basis
+        intersite_diffs = 0.0_dp
+        do i = 1, nf_bands
+            orb_i = mod(i - 1, num_bands) + 1
+            do j = 1, nf_bands
+                orb_j = mod(j - 1, num_bands) + 1
+                intersite_diffs(i, j, 1) = intersite_positions(orb_j, 1)       &
+                                         - intersite_positions(orb_i, 1)
+                intersite_diffs(i, j, 2) = intersite_positions(orb_j, 2)       &
+                                         - intersite_positions(orb_i, 2)
+            enddo
+        enddo
     end subroutine initialise_parameters
 !******************************************************************************
     pure function make_rlist_cart(num_r_pts, frac_rlist, avec) result(cart_rlist)
