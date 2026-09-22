@@ -1,20 +1,19 @@
 module parameters
 use kinds, only: dp
-use array_utilities, only: arange
 implicit none
 private
 public :: seedname, basis, nkp, num_bands, num_r_pts, avec, bvec, r_list, nk
 public :: initialise_parameters, electric_field_si, omega, soc, nlayers, k_frac
 public :: weights, energy_list, r_ham_list, num_photon, phase_shift, nf_bands
 public :: a_0, projection_centres, broadening_factor, direction, k_shift, nene
-public :: rlist_cart, fermi_energy, intersite_diffs
+public :: rlist_cart, fermi_energy, intersite_diffs, slab_area
     character(len=99), protected        :: seedname
     character(len=4),  protected        :: basis
     integer,           protected        :: num_bands, nf_bands, nkp, direction 
     integer,           protected        :: num_r_pts, num_photon, nlayers, nene
     integer,           protected        :: nk(3)
     real(dp),          protected        :: avec(3, 3), bvec(3, 3), phase_shift
-    real(dp),          protected        :: energy_range(2), omega
+    real(dp),          protected        :: energy_range(2), omega, slab_area
     real(dp),          protected        :: a_0, k_shift(3), k_frac(3)
     real(dp),          protected        :: electric_field_si, energy_step
     real(dp),          protected        :: broadening_factor, fermi_energy
@@ -28,6 +27,7 @@ public :: rlist_cart, fermi_energy, intersite_diffs
     complex(dp), protected, allocatable :: r_ham_list(:, :, :)
 contains
     subroutine initialise_parameters
+    use array_utilities, only: arange, cross_product
     use read_files, only: read_input, read_hr, read_nnkp, read_kpoints,        &
         read_vector_potential
     use constants, only: hbar=>reduced_planck_constant_ev
@@ -82,6 +82,17 @@ contains
                                          - intersite_positions(orb_i, 2)
             enddo
         enddo
+
+        select case(direction)
+            case(1)
+                slab_area = norm2(cross_product(avec(2, :), avec(3, :)))
+            case(2)
+                slab_area = norm2(cross_product(avec(1, :), avec(3, :)))
+            case(3)
+                slab_area = norm2(cross_product(avec(1, :), avec(2, :)))
+            case default
+                slab_area = 0.0_dp
+        end select
     end subroutine initialise_parameters
 !******************************************************************************
     pure function make_rlist_cart(num_r_pts, frac_rlist, avec) result(cart_rlist)

@@ -8,6 +8,7 @@ use parameters, only: nkp, nf_bands, initialise_parameters, num_r_pts,         &
 use floquet, only: make_floquet_hamiltonian_real_space
 use write_files, only: write_conductivity_real, write_conductivity_imag
 use transport, only: compute_conductivities
+use constants, only: elementary_charge
 implicit none
 !--------------------------------MPI Variables---------------------------------
     integer                  :: ierr, nprocs, pid, ibeg, iend
@@ -52,7 +53,7 @@ implicit none
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)
 
     conductivity_tensor = compute_conductivities(floquet_r_ham_list,           &
-        r_ham_list, klist, ibeg, iend)
+        r_ham_list, klist, ibeg, iend) * elementary_charge  ! convert to SI
 
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)
     deallocate(klist)

@@ -72,7 +72,7 @@ contains
         endif
     end function linspace
 !******************************************************************************
-    function cross_product(vec_1, vec_2) result(vec_cross)
+    pure function cross_product(vec_1, vec_2) result(vec_cross)
         implicit none
         real(dp), intent(in) :: vec_1(3), vec_2(3)
         real(dp) :: vec_cross(3)

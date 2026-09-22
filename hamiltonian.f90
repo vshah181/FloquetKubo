@@ -70,7 +70,8 @@ contains
     pure subroutine slab_velocities_xy(k, r_ham_list, n_bands, vxy_slab) ! V_xy
     use parameters, only: num_r_pts, r_list, weights, nlayers, rlist_cart,     &
         intersite_diffs
-    use constants, only: cmplx_0, cmplx_i, two_pi
+    use constants, only: cmplx_0, cmplx_i, two_pi,                             &
+        hbar=>reduced_planck_constant_ev
     ! assume slab in z / a_3 parallel to cartesian z
     implicit none
         integer,      intent(in) :: n_bands
@@ -97,7 +98,7 @@ contains
                 ! icol = 1 if -ve z, else icol=|z| * n_bands
                 icol = int((n_bands * (abs(r(3)) + r(3)) / 2) + 1)
 
-                prefac_matrix = cmplx_i * rham * exp(cmplx_i * phase) / w
+                prefac_matrix = cmplx_i * rham * exp(cmplx_i * phase) / (hbar * w)
                 do il=1, nlayers - int(abs(r(3)))
                     associate(vx_block=>vxy_slab(irow:irow + n_bands - 1,      &
                             icol:icol + n_bands - 1, 1),                       &

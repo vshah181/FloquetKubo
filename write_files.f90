@@ -24,10 +24,10 @@ contains
                 action="write")
         endif
 
-        write(iu, fmt="(2A)") "# probe energy,      sigma_xx,      sigma_xy,", &
-            "      sigma_yx,      sigma_yy"
+        write(iu, fmt="(2A)") "# probe energy (eV),       sigma_xx (S),",      &
+            "       sigma_xy (S),       sigma_yx (S),       sigma_yy (S)"
         do ie = 1, nene
-            write(iu, fmt="(ES14.6,4(A,ES14.6))") energy_list(ie),             &
+            write(iu, fmt="(ES19.12,4(A,ES19.12))") energy_list(ie),           &
                 ",", real(conductivity_tensor(1, 1, ie), kind=dp),             &
                 ",", real(conductivity_tensor(1, 2, ie), kind=dp),             &
                 ",", real(conductivity_tensor(2, 1, ie), kind=dp),             &
@@ -57,10 +57,10 @@ contains
                 action="write")
         endif
 
-        write(iu, fmt="(2A)") "# probe energy,      sigma_xx,      sigma_xy,", &
-            "      sigma_yx,      sigma_yy"
+        write(iu, fmt="(2A)") "# probe energy (eV),       sigma_xx (S),",      &
+            "       sigma_xy (S),       sigma_yx (S),       sigma_yy (S)"
         do ie = 1, nene
-            write(iu, fmt="(ES14.6,4(A,ES14.6))") energy_list(ie),             &
+            write(iu, fmt="(ES19.12,4(A,ES19.12))") energy_list(ie),           &
                 ",", aimag(conductivity_tensor(1, 1, ie)),                     &
                 ",", aimag(conductivity_tensor(1, 2, ie)),                     &
                 ",", aimag(conductivity_tensor(2, 1, ie)),                     &

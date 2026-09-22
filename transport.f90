@@ -9,8 +9,8 @@ contains
             klist, ibeg, iend) result(conductivity_tensor)
     use hamiltonian, only: slab_hamiltonian, slab_velocities_xy
     use parameters, only: num_r_pts, nf_bands, nkp, num_bands, nkp, nene,      &
-        nlayers, energy_list
-    use constants, only: cmplx_0
+        nlayers, energy_list, slab_area
+    use constants, only: cmplx_0, cmplx_i, hbar=>reduced_planck_constant_ev
     use lapack_interfaces, only: ZHEEVD
     use gauge_transformation, only: transform_velocity
     implicit none
@@ -34,6 +34,7 @@ contains
         complex(dp), allocatable :: static_eigenmat(:, :), floquet_eigenmat(:, :)
         complex(dp), allocatable :: velocity_operators(:, :, :)
         real(dp),    allocatable :: static_eigvals(:), floquet_eigvals(:)
+        complex(dp)              :: prefactor
         real(dp)                 :: k(3), occupations(nlayers * nf_bands)
         logical                  :: floquet_workspace_allocated
         logical                  :: static_workspace_allocated
@@ -67,6 +68,8 @@ contains
         allocate(velocity_operators(tf_bands, tf_bands, 2))
 
         conductivity_tensor = cmplx_0
+
+        prefactor = cmplx_i * (hbar / (real(nkp, kind=dp) * slab_area))
 
         do ik = ibeg, iend
             k = klist(:, ik)
@@ -142,10 +145,11 @@ contains
             ! Finally, sum over probe energies and apply Kubo-Greenwood
             do iw = 1, nene
                 conductivity_tensor(:, :, iw) = conductivity_tensor(:, :, iw)  &
-                                              + kubo_greenwood(occupations,    &
+                                              + (prefactor                     &
+                                              * kubo_greenwood(occupations,    &
                                                 floquet_eigvals,               &
                                                 velocity_operators,            &
-                                                energy_list(iw), tf_bands)
+                                                energy_list(iw), tf_bands))
             enddo
         enddo
     end function compute_conductivities
