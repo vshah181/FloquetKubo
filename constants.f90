@@ -5,8 +5,8 @@ implicit none
     real(dp), parameter :: two_pi = 8.0_dp * atan(1.0_dp)
     real(dp), parameter :: deg2rad = atan(1.0_dp) / 45.0_dp
     real(dp), parameter :: rad2deg = 45.0_dp / atan(1.0_dp)
-    real(dp), parameter :: root_two = 1.0_dp / cos(atan(1.0_dp))
-    real(dp), parameter :: root_half = cos(atan(1.0_dp))
+    real(dp), parameter :: root_two = sqrt(2.0_dp)
+    real(dp), parameter :: root_half = sqrt(0.5_dp)
     real(dp), parameter :: planck_constant = 6.62607015E-34_dp
     real(dp), parameter :: elementary_charge = 1.602176634E-19_dp
     real(dp), parameter :: speed_of_light = 299792458.0_dp

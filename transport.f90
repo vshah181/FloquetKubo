@@ -203,7 +203,7 @@ contains
             probe
         complex(dp), intent(in) :: velocities(n_bands, n_bands, 2)
         
-        real(dp), parameter     :: tol = 1.0E-16_dp
+        real(dp), parameter     :: tol = 1.0E-12_dp
         integer                 :: a, b, x, y
         real(dp)                :: ediff 
         complex(dp)             :: numerator, denominator, ieta
@@ -217,24 +217,11 @@ contains
         do x = 1, 2
             do y = 1, 2
                 do a = 1, n_bands
-                    do b = 1, a - 1
-                        ediff = energies(b) - energies(a)
+                    do b = 1, n_bands
+                        ediff = energies(a) - energies(b)
                         numerator = (occupations(a) - occupations(b))          &
-                                  * velocities(a, b, x) * velocities(b, a, y)
-                        denominator = (probe + ieta - ediff) * ediff
-                        if (abs(ediff) .gt. tol) then
-                            summand(x, y) = summand(x, y)                      &
-                                          + (numerator / denominator)
-                        else
-                            summand(x, y) = summand(x, y) + cmplx_0
-                        endif
-                    enddo
-                    ! skip a = b case without branching
-                    do b = a + 1, n_bands
-                        ediff = energies(b) - energies(a)
-                        numerator = (occupations(a) - occupations(b))          &
-                                  * velocities(a, b, x) * velocities(b, a, y)
-                        denominator = (probe + ieta - ediff) * ediff
+                                  * velocities(b, a, x) * velocities(a, b, y)
+                        denominator = ediff * (ediff - (probe + ieta))
                         if (abs(ediff) .gt. tol) then
                             summand(x, y) = summand(x, y)                      &
                                           + (numerator / denominator)
