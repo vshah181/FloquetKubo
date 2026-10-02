@@ -6,7 +6,8 @@ public :: seedname, basis, nkp, num_bands, num_r_pts, avec, bvec, r_list, nk
 public :: initialise_parameters, electric_field_si, omega, soc, nlayers, k_frac
 public :: weights, energy_list, r_ham_list, num_photon, phase_shift, nf_bands
 public :: a_0, projection_centres, broadening_factor, direction, k_shift, nene
-public :: rlist_cart, fermi_energy, intersite_diffs, slab_area
+public :: rlist_cart, fermi_energy, intersite_diffs, slab_area, bulk_volume
+public :: bulk_switch
     character(len=99), protected        :: seedname
     character(len=4),  protected        :: basis
     integer,           protected        :: num_bands, nf_bands, nkp, direction 
@@ -14,10 +15,11 @@ public :: rlist_cart, fermi_energy, intersite_diffs, slab_area
     integer,           protected        :: nk(3)
     real(dp),          protected        :: avec(3, 3), bvec(3, 3), phase_shift
     real(dp),          protected        :: energy_range(2), omega, slab_area
+    real(dp),          protected        :: bulk_volume
     real(dp),          protected        :: a_0, k_shift(3), k_frac(3)
     real(dp),          protected        :: electric_field_si, energy_step
     real(dp),          protected        :: broadening_factor, fermi_energy
-    logical,           protected        :: soc
+    logical,           protected        :: soc, bulk_switch
 
     integer,     protected, allocatable :: r_list(:, :), weights(:)
     real(dp),    protected, allocatable :: energy_list(:), rlist_cart(:, :)
@@ -35,7 +37,8 @@ contains
         integer :: i, j, orb_i, orb_j
 
         call read_input(seedname, basis, soc, nlayers, energy_range,           &
-            energy_step, broadening_factor, direction, fermi_energy)
+            energy_step, broadening_factor, direction, fermi_energy,           &
+            bulk_switch)
         call read_hr(seedname, num_bands, num_r_pts, r_list, r_ham_list,       &
             weights)
         allocate(projection_centres(num_bands, 3))
@@ -93,6 +96,10 @@ contains
             case default
                 slab_area = 0.0_dp
         end select
+
+        associate(plane_vec=>cross_product(avec(2, :), avec(3, :)))
+            bulk_volume = abs(dot_product(plane_vec, avec(1, :)))
+        end associate
     end subroutine initialise_parameters
 !******************************************************************************
     pure function make_rlist_cart(num_r_pts, frac_rlist, avec) result(cart_rlist)

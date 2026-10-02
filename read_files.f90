@@ -7,19 +7,22 @@ public :: read_input, read_hr, read_nnkp, read_kpoints, read_vector_potential
 contains
 !******************************************************************************
     subroutine read_input(seedname, basis, soc, nlayers, energy_range,         &
-        energy_step, broadening_factor, direction, fermi_energy)
+        energy_step, broadening_factor, direction, fermi_energy, bulk_switch)
     implicit none
         character(len=99), intent(out) :: seedname
         character(len=4),  intent(out) :: basis
         integer,           intent(out) :: nlayers, direction
         real(dp),          intent(out) :: energy_range(2), energy_step
         real(dp),          intent(out) :: broadening_factor, fermi_energy
-        logical,           intent(out) :: soc
+        logical,           intent(out) :: bulk_switch, soc
 
         character(len=99) :: label, ival, line, temp_line
         integer :: i, eof, inp_unit
 
-        open(newunit=inp_unit, file='INPUT', status='old', action='read', &
+        bulk_switch = .true. ! bulk calculation by default
+        nlayers = 1
+
+        open(newunit=inp_unit, file='INPUT', status='old', action='read',      &
             iostat=eof)
         do while(eof .ne. iostat_end)
             read(inp_unit, '(a)', iostat=eof) line
@@ -33,6 +36,8 @@ contains
                 read(ival, *) basis
             else if(trim(adjustl(label)) .eq. 'soc') then
                 read(ival, *) soc
+            else if(trim(adjustl(label)) .eq. 'bulk_switch') then
+                read(ival, *) bulk_switch
             else if(trim(adjustl(label)) .eq. 'nlayers') then
                 read(ival, *) nlayers
             else if(trim(adjustl(label)) .eq. 'energy_range') then
@@ -48,6 +53,10 @@ contains
             endif
         enddo
         close(inp_unit)
+
+        if (bulk_switch) then
+            nlayers = 1
+        endif
     end subroutine read_input
 !******************************************************************************
     subroutine read_hr(seedname, num_bands, num_r_pts, r_list, r_ham_list,     &

@@ -5,7 +5,7 @@ private
 public :: write_conductivity_real, write_conductivity_imag
 contains
     subroutine write_conductivity_real(conductivity_tensor)
-    use parameters, only: seedname, nene, energy_list
+    use parameters, only: seedname, nene, energy_list, bulk_switch
     implicit none
         complex(dp), intent(in) :: conductivity_tensor(2, 2, nene)
         character(len=99)       :: filename
@@ -24,8 +24,14 @@ contains
                 action="write")
         endif
 
-        write(iu, fmt="(2A)") "#  e-probe (eV),   sigma_xx (S),",              &
-            "   sigma_xy (S),   sigma_yx (S),   sigma_yy (S)"
+        if (bulk_switch) then
+            write(iu, fmt="(2A)") "#  e-probe (eV), sigma_xx (S/m),",          &
+                " sigma_xy (S/m), sigma_yx (S/m), sigma_yy (S/m)"
+        else
+            write(iu, fmt="(2A)") "#  e-probe (eV),   sigma_xx (S),",          &
+                "   sigma_xy (S),    igma_yx (S),   sigma_yy (S)"
+        endif
+
         do ie = 1, nene
             write(iu, fmt="(ES15.6,4(A,ES15.6))") energy_list(ie),             &
                 ",", real(conductivity_tensor(1, 1, ie), kind=dp),             &
@@ -38,7 +44,7 @@ contains
     end subroutine write_conductivity_real
 !******************************************************************************
     subroutine write_conductivity_imag(conductivity_tensor)
-    use parameters, only: seedname, nene, energy_list
+    use parameters, only: seedname, nene, energy_list, bulk_switch
     implicit none
         complex(dp), intent(in) :: conductivity_tensor(2, 2, nene)
         character(len=99)       :: filename
@@ -57,8 +63,14 @@ contains
                 action="write")
         endif
 
-        write(iu, fmt="(2A)") "#  e-probe (eV),   sigma_xx (S),",              &
-            "   sigma_xy (S),    igma_yx (S),   sigma_yy (S)"
+        if (bulk_switch) then
+            write(iu, fmt="(2A)") "#  e-probe (eV), sigma_xx (S/m),",          &
+                " sigma_xy (S/m), sigma_yx (S/m), sigma_yy (S/m)"
+        else
+            write(iu, fmt="(2A)") "#  e-probe (eV),   sigma_xx (S),",          &
+                "   sigma_xy (S),    igma_yx (S),   sigma_yy (S)"
+        endif
+
         do ie = 1, nene
             write(iu, fmt="(ES15.6,4(A,ES15.6))") energy_list(ie),             &
                 ",", aimag(conductivity_tensor(1, 1, ie)),                     &

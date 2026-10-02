@@ -4,10 +4,10 @@ use mpi_f08
 use mpi_utilities, only: split_klist
 use BZ_utilities, only: make_kmesh
 use parameters, only: nkp, nf_bands, initialise_parameters, num_r_pts,         &
-    r_ham_list, electric_field_si, nene
+    r_ham_list, electric_field_si, nene, bulk_switch
 use floquet, only: make_floquet_hamiltonian_real_space
 use write_files, only: write_conductivity_real, write_conductivity_imag
-use transport, only: compute_conductivities
+use transport, only: get_slab_conductivities, get_bulk_conductivities
 use constants, only: elementary_charge
 implicit none
 !--------------------------------MPI Variables---------------------------------
@@ -52,8 +52,13 @@ implicit none
     allocate(conductivity_tensor(2, 2, nene))
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)
 
-    conductivity_tensor = compute_conductivities(floquet_r_ham_list,           &
-        r_ham_list, klist, ibeg, iend) * elementary_charge  ! convert to SI
+    if (bulk_switch) then
+        conductivity_tensor = get_bulk_conductivities(floquet_r_ham_list,      &
+            r_ham_list, klist, ibeg, iend) * elementary_charge  ! convert to SI
+    else
+        conductivity_tensor = get_slab_conductivities(floquet_r_ham_list,      &
+            r_ham_list, klist, ibeg, iend) * elementary_charge  ! convert to SI
+    endif
 
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)
     deallocate(klist)

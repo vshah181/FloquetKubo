@@ -2,10 +2,158 @@ module transport
 use kinds, only: dp
 implicit none
 private
-public :: compute_conductivities
+public :: get_slab_conductivities, get_bulk_conductivities
 contains
+    function get_bulk_conductivities(floquet_r_ham_list, static_r_ham_list,    &
+            klist, ibeg, iend) result(conductivity_tensor)
+    use hamiltonian, only: bulk_hamiltonian, bulk_velocities_xy
+    use parameters, only: num_r_pts, nf_bands, nkp, num_bands, nkp, nene,      &
+        nlayers, energy_list, bulk_volume
+    use constants, only: cmplx_0, cmplx_i, hbar=>reduced_planck_constant_ev
+    use lapack_interfaces, only: ZHEEVD
+    use gauge_transformation, only: transform_velocity
+    implicit none
+        complex(dp), intent(in) :: static_r_ham_list(num_r_pts, num_bands, num_bands)
+        complex(dp), intent(in) :: floquet_r_ham_list(num_r_pts, nf_bands, nf_bands)
+        real(dp),    intent(in) :: klist(3, nkp)
+        integer,     intent(in) :: ibeg, iend
+
+!--------------------------ZHEEVD Variables (floquet)--------------------------
+        integer                  :: flwork, flrwork, fliwork, fstat
+        real(dp),    allocatable :: frwork(:), ftrwork(:)
+        complex(dp), allocatable :: fwork(:), ftwork(:)
+        integer,     allocatable :: fiwork(:), ftiwork(:)
+!--------------------------ZHEEVD Variables (static)---------------------------
+        integer                  :: slwork, slrwork, sliwork, sstat
+        real(dp),    allocatable :: srwork(:), strwork(:)
+        complex(dp), allocatable :: swork(:), stwork(:)
+        integer,     allocatable :: siwork(:), stiwork(:)
+
+        integer                  :: ik, ts_bands, tf_bands, iw
+        complex(dp), allocatable :: static_eigenmat(:, :), floquet_eigenmat(:, :)
+        complex(dp), allocatable :: velocity_operators(:, :, :)
+        real(dp),    allocatable :: static_eigvals(:), floquet_eigvals(:)
+        complex(dp)              :: prefactor
+        real(dp)                 :: k(3), occupations(nlayers * nf_bands)
+        logical                  :: floquet_workspace_allocated
+        logical                  :: static_workspace_allocated
+
+        complex(dp)              :: conductivity_tensor(2, 2, nene)
+!--------------------------Allocate arrays for ZHEEVD--------------------------
+        if ((ibeg .lt. 1) .or. (iend .gt. nkp)) then
+            error stop "Invalid ibeg/iend."
+        endif
+
+        ts_bands = nlayers * num_bands
+        tf_bands = nlayers * nf_bands
+        
+        flwork  = -1
+        flrwork = -1
+        fliwork = -1
+        allocate(floquet_eigenmat(tf_bands, tf_bands), floquet_eigvals(tf_bands))
+        allocate(ftwork(max(flwork, 1)), ftrwork(max(flrwork, 1))) 
+        allocate(ftiwork(max(fliwork, 1)))
+
+        slwork  = -1
+        slrwork = -1
+        sliwork = -1
+        allocate(static_eigenmat(ts_bands, ts_bands), static_eigvals(ts_bands))
+        allocate(stwork(max(slwork, 1)), strwork(max(slrwork, 1))) 
+        allocate(stiwork(max(sliwork, 1)))
+
+        static_workspace_allocated = .false.
+        floquet_workspace_allocated = .false.
+
+        allocate(velocity_operators(tf_bands, tf_bands, 2))
+
+        conductivity_tensor = cmplx_0
+
+        prefactor = cmplx_i * (hbar / (real(nkp, kind=dp) * bulk_volume))
+
+        do ik = ibeg, iend
+            k = klist(:, ik)
+            ! First, we need to allocate ZHEEVD arrays (static)
+            call bulk_hamiltonian(k, static_r_ham_list, num_bands, static_eigenmat)
+            if(.not.(static_workspace_allocated)) then
+                call ZHEEVD('V', 'L', ts_bands, static_eigenmat, ts_bands,     &
+                    static_eigvals, stwork, slwork, strwork, slrwork, stiwork, &
+                    sliwork, sstat)
+                if (sstat .ne. 0) then
+                    error stop "Failed to allocate workspace arrays for ZHEEVD"
+                endif
+                slwork = int(real(stwork(1), kind=dp))
+                slrwork = int(strwork(1))
+                sliwork = stiwork(1)
+                allocate(swork(slwork), srwork(slrwork), siwork(sliwork))
+                deallocate(stwork, strwork, stiwork)
+                static_workspace_allocated = .true.
+                ! recompute eigenmat, just in case it has been filled with 
+                ! garbage
+                call bulk_hamiltonian(k, static_r_ham_list, num_bands,         &
+                    static_eigenmat)
+            endif
+
+            ! Next, we need to allocate ZHEEVD arrays (floquet)
+            call bulk_hamiltonian(k, floquet_r_ham_list, nf_bands,             &
+                floquet_eigenmat)
+            if(.not.(floquet_workspace_allocated)) then
+                call ZHEEVD('V', 'L', tf_bands, floquet_eigenmat, tf_bands,    &
+                    floquet_eigvals, ftwork, flwork, ftrwork, flrwork, ftiwork,&
+                    fliwork, fstat)
+                if (fstat .ne. 0) then
+                    error stop "Failed to allocate workspace arrays for ZHEEVD"
+                endif
+                flwork = int(real(ftwork(1), kind=dp))
+                flrwork = int(ftrwork(1))
+                fliwork = ftiwork(1)
+                allocate(fwork(flwork), frwork(flrwork), fiwork(fliwork))
+                deallocate(ftwork, ftrwork, ftiwork)
+                floquet_workspace_allocated = .true.
+                ! recompute eigenmat, just in case it has been filled with 
+                ! garbage
+                call bulk_hamiltonian(k, floquet_r_ham_list, nf_bands,         &
+                    floquet_eigenmat)
+            endif
+
+            ! Now, diagonalise static and Floquet Hamiltonian
+            call ZHEEVD("V", "L", ts_bands, static_eigenmat, ts_bands,         &
+                static_eigvals, swork, slwork, srwork, slrwork, siwork,        &
+                sliwork, sstat)
+            if (sstat .ne. 0) then
+                error stop "ZHEEVD failed!"
+            endif
+
+            call ZHEEVD("V", "L", tf_bands, floquet_eigenmat, tf_bands,        &
+                floquet_eigvals, fwork, flwork, frwork, flrwork, fiwork,       &
+                fliwork, fstat)
+            if (fstat .ne. 0) then
+                error stop "ZHEEVD failed!"
+            endif
+
+            ! Now we need the occupations
+            occupations = floquet_fermionic_occ(static_eigvals,                &
+                static_eigenmat, floquet_eigenmat, tf_bands, ts_bands)
+
+            ! Now we need velocity matrices
+            call bulk_velocities_xy(k, floquet_r_ham_list, nf_bands,           &
+                velocity_operators)
+            ! Now transform the velocities to the right gauge
+            call transform_velocity(tf_bands, floquet_eigenmat,                &
+                velocity_operators)
+
+            ! Finally, sum over probe energies and apply Kubo-Greenwood
+            do iw = 1, nene
+                conductivity_tensor(:, :, iw) = conductivity_tensor(:, :, iw)  &
+                                              + (prefactor                     &
+                                              * kubo_greenwood(occupations,    &
+                                                floquet_eigvals,               &
+                                                velocity_operators,            &
+                                                energy_list(iw), tf_bands))
+            enddo
+        enddo
+    end function get_bulk_conductivities
 !******************************************************************************
-    function compute_conductivities(floquet_r_ham_list, static_r_ham_list,     &
+    function get_slab_conductivities(floquet_r_ham_list, static_r_ham_list,    &
             klist, ibeg, iend) result(conductivity_tensor)
     use hamiltonian, only: slab_hamiltonian, slab_velocities_xy
     use parameters, only: num_r_pts, nf_bands, nkp, num_bands, nkp, nene,      &
@@ -152,7 +300,7 @@ contains
                                                 energy_list(iw), tf_bands))
             enddo
         enddo
-    end function compute_conductivities
+    end function get_slab_conductivities
 !******************************************************************************
     pure function floquet_fermionic_occ(static_energies, static_states,        &
         floquet_states, n_bands_floq, n_bands_stat) result(occupancy)
