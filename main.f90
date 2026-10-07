@@ -54,10 +54,10 @@ implicit none
 
     if (bulk_switch) then
         conductivity_tensor = get_bulk_conductivities(floquet_r_ham_list,      &
-            r_ham_list, klist, ibeg, iend) * elementary_charge  ! convert to SI
+            r_ham_list, klist, ibeg, iend, pid) * elementary_charge  ! convert to SI
     else
         conductivity_tensor = get_slab_conductivities(floquet_r_ham_list,      &
-            r_ham_list, klist, ibeg, iend) * elementary_charge  ! convert to SI
+            r_ham_list, klist, ibeg, iend, pid) * elementary_charge  ! convert to SI
     endif
 
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)

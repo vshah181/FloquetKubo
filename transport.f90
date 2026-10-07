@@ -5,7 +5,7 @@ private
 public :: get_slab_conductivities, get_bulk_conductivities
 contains
     function get_bulk_conductivities(floquet_r_ham_list, static_r_ham_list,    &
-            klist, ibeg, iend) result(conductivity_tensor)
+            klist, ibeg, iend, pid) result(conductivity_tensor)
     use hamiltonian, only: bulk_hamiltonian, bulk_velocities_xy
     use parameters, only: num_r_pts, nf_bands, nkp, num_bands, nkp, nene,      &
         nlayers, energy_list, bulk_volume
@@ -16,7 +16,7 @@ contains
         complex(dp), intent(in) :: static_r_ham_list(num_r_pts, num_bands, num_bands)
         complex(dp), intent(in) :: floquet_r_ham_list(num_r_pts, nf_bands, nf_bands)
         real(dp),    intent(in) :: klist(3, nkp)
-        integer,     intent(in) :: ibeg, iend
+        integer,     intent(in) :: ibeg, iend, pid
 
 !--------------------------ZHEEVD Variables (floquet)--------------------------
         integer                  :: flwork, flrwork, fliwork, fstat
@@ -29,7 +29,7 @@ contains
         complex(dp), allocatable :: swork(:), stwork(:)
         integer,     allocatable :: siwork(:), stiwork(:)
 
-        integer                  :: ik, ts_bands, tf_bands, iw
+        integer                  :: ik, ts_bands, tf_bands, iw, loc_ik, k_tot
         complex(dp), allocatable :: static_eigenmat(:, :), floquet_eigenmat(:, :)
         complex(dp), allocatable :: velocity_operators(:, :, :)
         real(dp),    allocatable :: static_eigvals(:), floquet_eigvals(:)
@@ -70,7 +70,19 @@ contains
 
         prefactor = cmplx_i * (hbar / (real(nkp, kind=dp) * bulk_volume))
 
+        k_tot = (iend - ibeg) + 1
+        if (pid .eq. 0) then
+            write(*, fmt="(I0,A)") k_tot, " points on node 0"
+        endif
+
         do ik = ibeg, iend
+
+            if (pid .eq. 0) then
+                loc_ik = (ik - ibeg) + 1
+                write(*, fmt="(A,I0,A,I0)") "Processing point ", loc_ik,       &
+                    " of ", k_tot
+            endif
+
             k = klist(:, ik)
             ! First, we need to allocate ZHEEVD arrays (static)
             call bulk_hamiltonian(k, static_r_ham_list, num_bands, static_eigenmat)
@@ -154,7 +166,7 @@ contains
     end function get_bulk_conductivities
 !******************************************************************************
     function get_slab_conductivities(floquet_r_ham_list, static_r_ham_list,    &
-            klist, ibeg, iend) result(conductivity_tensor)
+            klist, ibeg, iend, pid) result(conductivity_tensor)
     use hamiltonian, only: slab_hamiltonian, slab_velocities_xy
     use parameters, only: num_r_pts, nf_bands, nkp, num_bands, nkp, nene,      &
         nlayers, energy_list, slab_area
@@ -165,7 +177,7 @@ contains
         complex(dp), intent(in) :: static_r_ham_list(num_r_pts, num_bands, num_bands)
         complex(dp), intent(in) :: floquet_r_ham_list(num_r_pts, nf_bands, nf_bands)
         real(dp),    intent(in) :: klist(3, nkp)
-        integer,     intent(in) :: ibeg, iend
+        integer,     intent(in) :: ibeg, iend, pid
 
 !--------------------------ZHEEVD Variables (floquet)--------------------------
         integer                  :: flwork, flrwork, fliwork, fstat
@@ -178,7 +190,7 @@ contains
         complex(dp), allocatable :: swork(:), stwork(:)
         integer,     allocatable :: siwork(:), stiwork(:)
 
-        integer                  :: ik, ts_bands, tf_bands, iw
+        integer                  :: ik, ts_bands, tf_bands, iw, loc_ik, k_tot
         complex(dp), allocatable :: static_eigenmat(:, :), floquet_eigenmat(:, :)
         complex(dp), allocatable :: velocity_operators(:, :, :)
         real(dp),    allocatable :: static_eigvals(:), floquet_eigvals(:)
@@ -219,7 +231,19 @@ contains
 
         prefactor = cmplx_i * (hbar / (real(nkp, kind=dp) * slab_area))
 
+        k_tot = (iend - ibeg) + 1
+        if (pid .eq. 0) then
+            write(*, fmt="(I0,A)") k_tot, " points on node 0"
+        endif
+
         do ik = ibeg, iend
+
+            if (pid .eq. 0) then
+                loc_ik = (ik - ibeg) + 1
+                write(*, fmt="(A,I0,A,I0)") "Processing point ", loc_ik,       &
+                    " of ", k_tot
+            endif
+
             k = klist(:, ik)
             ! First, we need to allocate ZHEEVD arrays (static)
             call slab_hamiltonian(k, static_r_ham_list, num_bands, static_eigenmat)
