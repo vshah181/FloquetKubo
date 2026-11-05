@@ -16,6 +16,7 @@ implicit none
     complex(dp), allocatable :: conductivity_tensor_glob(:, :, :)
 !------------------------------------------------------------------------------
     integer                  :: nkpar
+    real(dp)                 :: si_conversion_factor
     real(dp), allocatable    :: klist(:, :)
     complex(dp), allocatable :: floquet_r_ham_list(:, :, :)
     complex(dp), allocatable :: conductivity_tensor(:, :, :)
@@ -53,22 +54,26 @@ implicit none
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)
 
     if (bulk_switch) then
+        si_conversion_factor = elementary_charge / 1.0E-10_dp
         conductivity_tensor = get_bulk_conductivities(floquet_r_ham_list,      &
-            r_ham_list, klist, ibeg, iend, pid) * elementary_charge  ! convert to SI
+            r_ham_list, klist, ibeg, iend, pid) 
     else
+        si_conversion_factor = elementary_charge
         conductivity_tensor = get_slab_conductivities(floquet_r_ham_list,      &
-            r_ham_list, klist, ibeg, iend, pid) * elementary_charge  ! convert to SI
+            r_ham_list, klist, ibeg, iend, pid)
     endif
 
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)
     deallocate(klist)
     call MPI_BARRIER(MPI_COMM_WORLD, ierr)
 
+    ! Convert to SI during the MPI_Reduce call or glob assignment
     if (nprocs /= 1) then
-        call MPI_Reduce(conductivity_tensor, conductivity_tensor_glob,         &
-            2 * 2 * nene, MPI_DOUBLE_COMPLEX, MPI_SUM, 0, MPI_COMM_WORLD, ierr)
+        call MPI_Reduce(conductivity_tensor * si_conversion_factor,            &
+            conductivity_tensor_glob, 2 * 2 * nene, MPI_DOUBLE_COMPLEX,        &
+            MPI_SUM, 0, MPI_COMM_WORLD, ierr)
     else
-        conductivity_tensor_glob = conductivity_tensor
+        conductivity_tensor_glob = conductivity_tensor * si_conversion_factor
     endif
 
     
