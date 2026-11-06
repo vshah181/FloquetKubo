@@ -29,11 +29,11 @@ contains
                 " sigma_xy (S/m), sigma_yx (S/m), sigma_yy (S/m)"
         else
             write(iu, fmt="(2A)") "#  e-probe (eV),   sigma_xx (S),",          &
-                "   sigma_xy (S),    igma_yx (S),   sigma_yy (S)"
+                "   sigma_xy (S),   sigma_yx (S),   sigma_yy (S)"
         endif
 
         do ie = 1, nene
-            write(iu, fmt="(ES15.6,4(A,ES15.6))") energy_list(ie),             &
+            write(iu, fmt="(ES16.7,4(A,ES16.7))") energy_list(ie),             &
                 ",", real(conductivity_tensor(1, 1, ie), kind=dp),             &
                 ",", real(conductivity_tensor(1, 2, ie), kind=dp),             &
                 ",", real(conductivity_tensor(2, 1, ie), kind=dp),             &
@@ -68,11 +68,11 @@ contains
                 " sigma_xy (S/m), sigma_yx (S/m), sigma_yy (S/m)"
         else
             write(iu, fmt="(2A)") "#  e-probe (eV),   sigma_xx (S),",          &
-                "   sigma_xy (S),    igma_yx (S),   sigma_yy (S)"
+                "   sigma_xy (S),   sigma_yx (S),   sigma_yy (S)"
         endif
 
         do ie = 1, nene
-            write(iu, fmt="(ES15.6,4(A,ES15.6))") energy_list(ie),             &
+            write(iu, fmt="(ES16.7,4(A,ES16.7))") energy_list(ie),             &
                 ",", aimag(conductivity_tensor(1, 1, ie)),                     &
                 ",", aimag(conductivity_tensor(1, 2, ie)),                     &
                 ",", aimag(conductivity_tensor(2, 1, ie)),                     &
